@@ -32,7 +32,25 @@ int main() {
         printf(" >> %s\n", type(current_type));
     }
     // NULL should be avoided, otherwise
-    // unexpected things may happen
+    // it may lead to unexpected behavior
+    printf("\n");
+
+    del(&array, 0);
+
+    for (int i = 0; i < 5; i++) {
+        DataType current_type = get(array, i);
+        print(current_type);
+        printf(" >> %s\n", type(current_type));
+    }
+
+    printf("\n");
+
+    // It's not recommended to initialize DataType
+    // values without using assign(), as it can lead
+    // to unintended behavior
+    DataType null = {};
+    print(null);
+    printf(" >> %s\n", type(null));
 
     return 0;
 }

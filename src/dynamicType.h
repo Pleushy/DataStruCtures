@@ -1,6 +1,6 @@
 #include <stdbool.h>
 
-// Defining enums for different data types
+// Defines enums for different data types
 typedef enum {
     BOOL,
     STRING,
@@ -8,7 +8,7 @@ typedef enum {
     FLOAT
 } DataEnum;
 
-// Defining data union to store values
+// Defines data union to store values
 typedef union {
     bool boolean;
     char *string;
@@ -16,13 +16,13 @@ typedef union {
     float float_val;
 } Data;
 
-// Defining data type structure
+// Defines data type structure
 typedef struct {
     Data data;
     DataEnum data_enum;
 } DataType;
 
-// Defining data type structure array
+// Defines data type structure array
 typedef struct {
     DataType *data_types;
     __uint64_t size;

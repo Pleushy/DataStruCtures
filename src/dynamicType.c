@@ -17,7 +17,7 @@ void add(DataTypeArray *array, DataType data) {
     memcpy(tmp, array->data_types, byte_size);
     array->data_types = realloc(array->data_types, byte_size+sizeof(DataType));
     if (array->data_types == NULL) {
-        printf("Failed to add data -> not enough memory available.");
+        printf("Failed to add data -> not enough memory available.\n");
         return;
     }
     memcpy(array->data_types, tmp, byte_size);
@@ -27,12 +27,16 @@ void add(DataTypeArray *array, DataType data) {
 }
 
 void del(DataTypeArray *array, __uint64_t index) {
+    if (index > (array->size-1)) {
+        printf("Index out of bounds.\n");
+        return;
+    }
     int byte_size = sizeof(DataType)*array->size;
     DataType *tmp = malloc(byte_size);
     memcpy(tmp, array->data_types, byte_size);
     array->data_types = realloc(array->data_types, byte_size-sizeof(DataType));
     if (array->data_types == NULL) {
-        printf("Failed to delete data -> not enough memory available.");
+        printf("Failed to delete data -> not enough memory available.\n");
         return;
     }
     bool found;
@@ -67,7 +71,7 @@ void assign(DataType *data, DataEnum data_enum, void *val) {
             break;
         
         default:
-            printf("Error assigning value");
+            printf("Error assigning value.\n");
             break;
     }
 }
