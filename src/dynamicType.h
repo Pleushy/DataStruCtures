@@ -39,10 +39,10 @@ void print(DataType data);
 void assign(DataType *data, DataEnum data_enum, void *val);
 
 // Adds a data type to a data type array
-void add(DataTypeArray *dataArray, DataType data);
+void add(DataTypeArray *array, DataType data);
 
 // Removes a data type from a data array on index
-void del(DataTypeArray *dataArray, __uint64_t index);
+void del(DataTypeArray *array, __uint64_t index);
 
 // Returns a data type from a data array on index
-DataType get(DataTypeArray dataArray, __uint64_t index);
+DataType get(DataTypeArray array, __uint64_t index);
