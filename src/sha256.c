@@ -50,7 +50,7 @@ __uint64_t ror(__uint64_t x, __uint64_t n, __uint64_t bits) {
     return (x >> n) | (x << (bits - n));
 }
 
-// not needed as going for __uint256_t
+// for debug
 // char *bin_to_hex(char *bin, __uint64_t bits) {
 //     char *hex = malloc(bits/4+1);
 //     memset(hex, 0, bits/4+1);
@@ -102,7 +102,7 @@ __uint64_t create_hash(char* string) {
         if (i*sizeof(string) > mem) {
             __uint64_t *tmp = malloc(mem);
             memcpy(tmp, data, mem);
-            data = realloc(data, mem+512/8);
+            data = realloc(data, mem+512);
             memcpy(data, tmp, mem);
             for (int j = mem; j < mem+512/8; j++) {
                 data[j] = '0';
@@ -200,6 +200,7 @@ __uint64_t create_hash(char* string) {
     char *bin_val = malloc(64);
     strcpy(bin_val, to_bin(modifiers[6],32));
     strcat(bin_val, to_bin(modifiers[7],32));
+    // printf("%s\n", bin_to_hex(bin_val, 64));
     __uint64_t val = to_dec(bin_val,64);
     free(bin_val);
     return val;
