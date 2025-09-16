@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "dynamictype.h": "c",
+        "types.h": "c",
+        "hashmap.h": "c"
+    }
+}

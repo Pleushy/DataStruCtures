@@ -26,20 +26,25 @@ typedef struct {
 typedef struct {
     DataType *data_types;
     __uint64_t size;
+    __uint64_t limit;
 } DataTypeArray;
 
 
 // Returns the data type enum in string
 char *type(DataType data);
 
-// Prints the data type's value
-void print(DataType data);
+// Returns value of data type
+void *get_value(DataType data);
 
-// Assigns a value and data enum to data type
-void assign(DataType *data, DataEnum data_enum, void *val);
+// Prints string and value of data type
+// Can use "%%" to specify where to place data type
+void print(const char* string, DataType data);
+
+// Initiates a data type with value and data enum
+DataType init(DataEnum data_enum, void *val);
 
 // Adds a data type to a data type array
-void add(DataTypeArray *array, DataType data);
+void put(DataTypeArray *array, DataType data);
 
 // Removes a data type from a data array on index
 void del(DataTypeArray *array, __uint64_t index);
