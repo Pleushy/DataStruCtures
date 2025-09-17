@@ -3,54 +3,54 @@
 #include <string.h>
 #include "dynamicType.h"
 
-DataType get(DataTypeArray array, __uint64_t index) {
+Data arr_get(DataArray array, __uint64_t index) {
     if (index > (array.size-1)) {
-        DataType returnVal = {-1, -1};
+        Data returnVal = {-1, -1};
         return returnVal;
     }
-    return array.data_types[index];
+    return array.data[index];
 }
 
-void put(DataTypeArray *array, DataType data) {
+void arr_put(DataArray *array, Data data) {
     if (!array->limit) array->limit++;
 
-    __uint64_t byte_size = sizeof(DataType)*array->size;
-    DataType *tmp = malloc(byte_size);
-    memcpy(tmp, array->data_types, byte_size);
+    __uint64_t byte_size = sizeof(Data)*array->size;
+    Data *tmp = malloc(byte_size);
+    memcpy(tmp, array->data, byte_size);
 
     if ((array->size+1) >= array->limit) {
         array->limit *= 2;
         //printf("%ld\n", array->limit);
         
-        array->data_types = realloc(array->data_types, sizeof(DataType)*array->limit);
-        if (array->data_types == NULL) {
+        array->data = realloc(array->data, sizeof(Data)*array->limit);
+        if (array->data == NULL) {
             //printf("Failed to put data -> not enough memory available.\n");
             return;
         }
     }
 
-    memcpy(array->data_types, tmp, byte_size);
+    memcpy(array->data, tmp, byte_size);
     free(tmp);
-    array->data_types[array->size] = data;
+    array->data[array->size] = data;
     array->size++;
 }
 
-void del(DataTypeArray *array, __uint64_t index) {
+void arr_del(DataArray *array, __uint64_t index) {
     if (index > (array->size-1)) {
         //printf("Index out of bounds.\n");
         return;
     }
 
-    __uint64_t byte_size = sizeof(DataType)*array->size;
-    DataType *tmp = malloc(byte_size);
-    memcpy(tmp, array->data_types, byte_size);
+    __uint64_t byte_size = sizeof(Data)*array->size;
+    Data *tmp = malloc(byte_size);
+    memcpy(tmp, array->data, byte_size);
 
     if ((array->size+1) < array->limit) {
         array->limit /= 2;
         //printf("%ld\n", array->limit);
 
-        array->data_types = realloc(array->data_types, sizeof(DataType)*array->limit);
-        if (array->data_types == NULL) {
+        array->data = realloc(array->data, sizeof(Data)*array->limit);
+        if (array->data == NULL) {
             //printf("Failed to delete data -> not enough memory available.\n");
             return;
         }
@@ -62,14 +62,14 @@ void del(DataTypeArray *array, __uint64_t index) {
             found = true;
             continue;
         }
-        array->data_types[i-found] = tmp[i];
+        array->data[i-found] = tmp[i];
     }
     free(tmp);
     array->size--;
 }
 
-DataType init(DataEnum data_enum, void *val) {
-    DataType data = {-1,-1};
+Data data_init(DataType data_enum, void *val) {
+    Data data = {-1,-1};
 
     switch (data_enum) {
         case BOOL:
@@ -86,6 +86,9 @@ DataType init(DataEnum data_enum, void *val) {
             float *tmp_FLOAT = val;
             data.data.float_val = *tmp_FLOAT;
             break;
+        case ARRAY:
+            data.data.array_val = val;
+            break;
         
         default:
             return data;
@@ -94,7 +97,7 @@ DataType init(DataEnum data_enum, void *val) {
     return data;
 }
 
-char *type(DataType data) {
+char *data_typeof(Data data) {
     char *t;
     switch (data.data_enum) {
         case BOOL:
@@ -109,6 +112,24 @@ char *type(DataType data) {
         case FLOAT:
             t = "FLOAT";
             break;
+        case ARRAY:
+            t = malloc(9);
+            strcpy(t, "ARRAY (");
+            __uint64_t total = 0;
+            for (__uint64_t j = 0; j < data.data.array_val->size; j++) {
+                char *new = data_typeof(arr_get(*data.data.array_val,j));
+                __uint64_t s = 0;
+                while (new[s] != '\0') s++;
+                if (j < data.data.array_val->size-1) s+=2;
+                total += s;
+                t = realloc(t, total+9);
+                if (t == NULL) return "";
+                strcat(t, new);
+                if (j < data.data.array_val->size-1) strcat(t, ", ");
+            }
+            t[total+7] = ')';
+            t[total+8] = '\0';
+            break;
         
         default:
             t = "NULL";
@@ -117,7 +138,7 @@ char *type(DataType data) {
     return t;
 }
 
-void *get_value(DataType data) {
+void *data_get(Data data) {
     switch (data.data_enum) {
         case BOOL:
             return &(bool){data.data.boolean};
@@ -127,39 +148,67 @@ void *get_value(DataType data) {
             return &(__uint64_t){data.data.uint64_val};
         case FLOAT:
             return &(float){data.data.float_val};
+        case ARRAY:
+            return &(DataArray*){data.data.array_val};
         
         default:
             return NULL;
     }
 }
 
-void print(const char* str, DataType data) {
-    // I don't understand this but oke
-    __uint64_t i = 0;
-    while (str[i] != '\0') i++;
-    char *string = malloc(i*sizeof(str));
-    strcpy(string, str);
+void data_printf(const char* str, Data data) {
 
-    bool contains_percentage = (strstr(string, "%%") != NULL);
-
-    if (contains_percentage) printf("%s", strtok(string, "%%"));
-        switch (data.data_enum) {
-            case BOOL:
-                printf("%s", (data.data.boolean ? "true" : "false"));
-                break;
-            case STRING:
-                printf("%s", data.data.string);
-                break;
-            case UINT64_T:
-                printf("%ld", data.data.uint64_val);
-                break;
-            case FLOAT:
-                printf("%f", data.data.float_val);
-                break;
-            
-            default:
-                printf("NULL");
-                break;
+    char *startStr = malloc(1), *endStr = malloc(1);
+    startStr[0] = '\0';
+    endStr[0] = '\0';
+    __uint64_t i = 0, splitIndex = 0;
+    while (str[i] != '\0') {
+        if (str[i] == '%') {
+            splitIndex = ++i;
+            continue;
         }
-    if (contains_percentage) printf("%s", strtok(NULL, "%%"));
+
+        if (splitIndex > 0) {
+            endStr = realloc(endStr, i-splitIndex+1);
+            if (endStr == NULL) return;
+            endStr[i-splitIndex] = str[i];
+            endStr[i-splitIndex+1] = '\0';
+        } else {
+            startStr = realloc(startStr, i+1);
+            if (startStr == NULL) return;
+            startStr[i] = str[i];
+            startStr[i+1] = '\0';
+        }
+        i++;
+    }
+
+    printf("%s", startStr);
+    switch (data.data_enum) {
+        case BOOL:
+            printf("%s", (data.data.boolean ? "true" : "false"));
+            break;
+        case STRING:
+            printf("%s", data.data.string);
+            break;
+        case UINT64_T:
+            printf("%ld", data.data.uint64_val);
+            break;
+        case FLOAT:
+            printf("%f", data.data.float_val);
+            break;
+        case ARRAY:
+            printf("(");
+            for (__uint64_t j = 0; j < data.data.array_val->size; j++) {
+                data_printf(j < data.data.array_val->size-1 ? "%%, " : "", arr_get(*data.data.array_val,j));
+            }
+            printf(")");
+            break;
+        
+        default:
+            printf("NULL");
+            break;
+    }
+    printf("%s", endStr);
+    free(startStr);
+    free(endStr);
 }

@@ -6,50 +6,62 @@ int main() {
     // Test code :3
 
     // Dynamic types and arrays
-    DataType uint64_type = init(UINT64_T, &(__uint64_t){65535});
-    DataType string_type = init(STRING, "Hello, world!");
-    DataType float_type = init(FLOAT, &(float){3.14159f});
-    DataType bool_type = init(BOOL, &(bool){true});
+    Data uint64_type = data_init(UINT64_T, &(__uint64_t){65535});
+    Data string_type = data_init(STRING, "Hello, world!");
+    Data float_type = data_init(FLOAT, &(float){3.14159f});
+    Data bool_type = data_init(BOOL, &(bool){true});
 
-    // We can get a value back by using get_value
-    char* *value = get_value(string_type);
-    printf("%s\n\n", *value);
+    // We can get a value back by using data_get
+    void* value = data_get(string_type);
+    printf("%s\n\n", *(char**)value);
 
-    // DataTypeArray has to be initialized as empty,
+    // DataArray has to be initialized as empty,
     // otherwise it's values will be random
-    DataTypeArray array = {};
+    DataArray array = {};
 
-    put(&array, uint64_type);
-    put(&array, string_type);
-    put(&array, float_type);
-    put(&array, bool_type);
+    arr_put(&array, uint64_type);
+    arr_put(&array, string_type);
+    arr_put(&array, float_type);
+    arr_put(&array, bool_type);
+    
+    DataArray newArray = {};
+
+    arr_put(&newArray, uint64_type);
+    arr_put(&newArray, string_type);
+
+    arr_put(&array, data_init(ARRAY, &newArray));
 
     // If we go beyond the size of the array,
     // the values are NULL
     for (int i = 0; i < 5; i++) {
-        DataType current_type = get(array, i);
-        print("Value: %% | Type: ", current_type);
-        printf("%s\n", type(current_type));
+        Data current_type = arr_get(array, i);
+        data_printf("Value: %% | Type: ", current_type);
+        printf("%s\n", data_typeof(current_type));
     }
-    // NULL should be avoided, otherwise
-    // it may lead to unexpected behavior
+    
+    // NULL should be avoided, as it may lead to
+    // unexpected behavior
     printf("\n");
 
     // Deletes data type at first index of array
-    del(&array, 0);
+    arr_del(&array, 0);
 
     for (int i = 0; i < 5; i++) {
-        DataType current_type = get(array, i);
-        print("Value: %% | Type: ", current_type);
-        printf("%s\n", type(current_type));
+        Data current_type = arr_get(array, i);
+        data_printf("Value: %% | Type: ", current_type);
+        printf("%s\n", data_typeof(current_type));
     }
     printf("\n");
 
-    // Hashmap (TODO)
-    HashMapObject obj[] = {hashmap_object_init("myKey", array)};
-    HashMap map = hashmap_init(obj, 1);
-    HashMapObject newObj = hashmap_get(map, "myKey");
-    printf("%s %s\n", map.objects[0].key, *(char**)get_value(get(newObj.val, 0)));
+    // Hashmap - work in progress
+    HashMap map = {};
+    hm_put(&map, "1", array);
+    hm_put(&map, "2", newArray);
+
+    DataArray retArray = hm_get(map, "1");
+    DataArray retArray2 = hm_get(map, "2");
+    data_printf("1 - %%\n", data_init(ARRAY, &retArray));
+    data_printf("2 - %%\n", data_init(ARRAY, &retArray2));
 
     return 0;
 }

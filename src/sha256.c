@@ -118,7 +118,7 @@ __uint64_t create_hash(char* string) {
         i++;
     }
     data[i*8] = '1';
-
+    
     // put size into last 64 bits (big-endian)
     char *bin_size = to_bin(i*8, 64);
     for (__uint64_t j = mem-64; j < mem; j++) {

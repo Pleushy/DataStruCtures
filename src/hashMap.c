@@ -3,21 +3,40 @@
 #include <string.h>
 #include "hashMap.h"
 
-HashMapObject hashmap_object_init(char *key, DataTypeArray val) {
-    HashMapObject new = {key, val, create_hash(key)};
-    return new;
+// gets a value from a hash map
+DataArray hm_get(HashMap map, char *key) {
+    if (!map.size) return (DataArray){};
+
+    __uint64_t hash = create_hash(key);
+    __uint64_t index = !map.size ? 0 : hash%map.size;
+
+    return map.objects[index].array;
 }
 
-HashMap hashmap_init(HashMapObject *objects, __uint64_t size) {
-    HashMap new = {objects, size};
-    return new;
-}
+void hm_put(HashMap *map, char *key, DataArray array) {
+    if (!map->limit) map->limit++;
 
-HashMapObject hashmap_get(HashMap map, char *key) {
-    __uint64_t newHash = create_hash(key);
-    __uint64_t index = newHash % map.size;
+    __uint64_t hash = create_hash(key);
+    __uint64_t index = !map->size ? 0 : hash%map->size;
 
-   HashMapObject returnVal = {};
-    if (map.size < index) return returnVal;
-    return map.objects[index];
+    // byte size is fixed at 64 (smallest value that works :3)
+    __uint64_t byte_size = 64*map->size;
+    void *tmp = malloc(byte_size);
+    memcpy(tmp, map->objects, byte_size);
+
+    if ((map->size+1) >= map->limit) {
+        map->limit *= 2;
+        
+        map->objects = realloc(map->objects, 64*map->limit);
+        if (map->objects == NULL) {
+            return;
+        }
+    }
+    memcpy(map->objects, tmp, byte_size);
+    free(tmp);
+
+    map->objects[index].array = array;
+    map->objects[index].hash = hash;
+    map->objects[index].key = key;
+    map->size++;
 }

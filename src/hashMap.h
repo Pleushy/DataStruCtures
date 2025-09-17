@@ -2,22 +2,17 @@
 #include "sha256.h"
 
 typedef struct {
-    char *key;
-    DataTypeArray val;
-    __uint64_t hash;
-} HashMapObject;
-
-typedef struct {
-    HashMapObject *objects;
+    struct {
+        char *key;
+        DataArray array;
+        __uint64_t hash;
+    } *objects;
     __uint64_t size;
+    __uint64_t limit;
 } HashMap;
 
-HashMapObject hashmap_object_init(char *key, DataTypeArray val);
+void hm_put(HashMap *map, char *key, DataArray array);
 
-HashMap hashmap_init(HashMapObject *objects, __uint64_t size);
+void hm_del(HashMap *map, char *key);
 
-void hashmap_put(HashMap map, char *key, DataType val);
-
-void hashmap_del(HashMap map, char *key);
-
-HashMapObject hashmap_get(HashMap map, char *key);
+DataArray hm_get(HashMap map, char *key);

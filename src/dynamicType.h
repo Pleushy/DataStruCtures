@@ -5,49 +5,51 @@ typedef enum {
     BOOL,
     STRING,
     UINT64_T,
-    FLOAT
-} DataEnum;
-
-// Defines data union to store values
-typedef union {
-    bool boolean;
-    char *string;
-    __uint64_t uint64_val;
-    float float_val;
-} Data;
-
-// Defines data type structure
-typedef struct {
-    Data data;
-    DataEnum data_enum;
+    FLOAT,
+    ARRAY
 } DataType;
 
-// Defines data type structure array
+// Defines data array strcuture in advance so data struct can use it (Array nesting)
+struct DATA_ARRAY;
+
+// Defines data structure
 typedef struct {
-    DataType *data_types;
+    union {
+        bool boolean;
+        char *string;
+        __uint64_t uint64_val;
+        float float_val;
+        struct DATA_ARRAY *array_val;
+    } data;
+    DataType data_enum;
+} Data;
+
+// Defines data array structure
+typedef struct DATA_ARRAY {
+    Data *data;
     __uint64_t size;
     __uint64_t limit;
-} DataTypeArray;
+} DataArray;
 
 
 // Returns the data type enum in string
-char *type(DataType data);
+char *data_typeof(Data data);
 
 // Returns value of data type
-void *get_value(DataType data);
+void *data_get(Data data);
 
 // Prints string and value of data type
 // Can use "%%" to specify where to place data type
-void print(const char* string, DataType data);
+void data_printf(const char* string, Data data);
 
 // Initiates a data type with value and data enum
-DataType init(DataEnum data_enum, void *val);
+Data data_init(DataType data_enum, void *val);
 
 // Adds a data type to a data type array
-void put(DataTypeArray *array, DataType data);
+void arr_put(DataArray *array, Data data);
 
 // Removes a data type from a data array on index
-void del(DataTypeArray *array, __uint64_t index);
+void arr_del(DataArray *array, __uint64_t index);
 
 // Returns a data type from a data array on index
-DataType get(DataTypeArray array, __uint64_t index);
+Data arr_get(DataArray array, __uint64_t index);

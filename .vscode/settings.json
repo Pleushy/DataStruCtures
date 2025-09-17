@@ -2,6 +2,7 @@
     "files.associations": {
         "dynamictype.h": "c",
         "types.h": "c",
-        "hashmap.h": "c"
+        "hashmap.h": "c",
+        "initializer_list": "c"
     }
 }
