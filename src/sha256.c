@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "sha256.h"
+#include "../include/sha256.h"
 
 // this took me 2 days
 // :3

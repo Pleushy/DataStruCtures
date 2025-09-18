@@ -3,6 +3,7 @@
         "dynamictype.h": "c",
         "types.h": "c",
         "hashmap.h": "c",
-        "initializer_list": "c"
+        "initializer_list": "c",
+        "string.h": "c"
     }
 }

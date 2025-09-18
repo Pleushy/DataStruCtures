@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "structures.h"
+#include "../include/structures.h"
 
 int main() {
     // Test code :3
@@ -53,15 +53,37 @@ int main() {
     }
     printf("\n");
 
-    // Hashmap - work in progress
+    // Hashmap test
     HashMap map = {};
-    hm_put(&map, "1", array);
-    hm_put(&map, "2", newArray);
-
-    DataArray retArray = hm_get(map, "1");
-    DataArray retArray2 = hm_get(map, "2");
-    data_printf("1 - %%\n", data_init(ARRAY, &retArray));
-    data_printf("2 - %%\n", data_init(ARRAY, &retArray2));
+    for (__uint64_t i = 0; i < 64; i++) {
+        DataArray arr = {};
+        arr_put(&arr, data_init(UINT64_T, &(__uint64_t){i}));
+        char *key;
+        if (i) {
+            key = malloc(i/10+1);
+            char *tmp = malloc(i/10+1);
+            __uint64_t j = 0;
+            __uint64_t k = i;
+            while(k > 0) {
+                tmp[j++] = k%10+'0';
+                k/=10;
+            }
+            __uint64_t l = 0; 
+            for (;l < j; l++) {
+                key[l] = tmp[j-1-l];
+            }
+            key[l] = '\0';
+        } else {
+            key = malloc(2);
+            key[0] = '0';
+            key[1] = '\0';
+        }
+        hm_put(&map, key, arr);
+        printf("KEY: %s", key);
+        data_printf(" | VALUE: %%\n", arr_get(hm_get(map, key), 0));
+    }
+    // todo: implement
+    // hm_tree(map);
 
     return 0;
 }

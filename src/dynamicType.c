@@ -1,10 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "dynamicType.h"
+#include "../include/dynamicType.h"
 
 Data arr_get(DataArray array, __uint64_t index) {
-    if (index > (array.size-1)) {
+    if (index > (array.size-1) || !array.size) {
         Data returnVal = {-1, -1};
         return returnVal;
     }
@@ -40,12 +40,17 @@ void arr_del(DataArray *array, __uint64_t index) {
         //printf("Index out of bounds.\n");
         return;
     }
+    if (!(array->size-1)) {
+        array->limit = 0;
+        array->data = 0;
+        free(array->data);
+    }
 
     __uint64_t byte_size = sizeof(Data)*array->size;
     Data *tmp = malloc(byte_size);
     memcpy(tmp, array->data, byte_size);
 
-    if ((array->size+1) < array->limit) {
+    if ((array->size-1) < (array->limit/2-1)) {
         array->limit /= 2;
         //printf("%ld\n", array->limit);
 
@@ -159,6 +164,7 @@ void *data_get(Data data) {
 void data_printf(const char* str, Data data) {
 
     char *startStr = malloc(1), *endStr = malloc(1);
+    if (startStr == NULL || endStr == NULL) return;
     startStr[0] = '\0';
     endStr[0] = '\0';
     __uint64_t i = 0, splitIndex = 0;
