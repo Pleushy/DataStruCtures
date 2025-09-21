@@ -1,3 +1,5 @@
+#include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -23,10 +25,7 @@ void arr_put(DataArray *array, Data data) {
         //printf("%ld\n", array->limit);
         
         array->data = realloc(array->data, sizeof(Data)*array->limit);
-        if (array->data == NULL) {
-            //printf("Failed to put data -> not enough memory available.\n");
-            return;
-        }
+        if (array->data == NULL) return;
     }
 
     memcpy(array->data, tmp, byte_size);
@@ -36,10 +35,7 @@ void arr_put(DataArray *array, Data data) {
 }
 
 void arr_del(DataArray *array, __uint64_t index) {
-    if (index > (array->size-1)) {
-        //printf("Index out of bounds.\n");
-        return;
-    }
+    if (index > (array->size-1)) return;
     if (!(array->size-1)) {
         array->limit = 0;
         array->data = 0;
@@ -50,15 +46,12 @@ void arr_del(DataArray *array, __uint64_t index) {
     Data *tmp = malloc(byte_size);
     memcpy(tmp, array->data, byte_size);
 
-    if ((array->size-1) < (array->limit/2-1)) {
+    if ((array->size-1) <= (array->limit/2-1)) {
         array->limit /= 2;
         //printf("%ld\n", array->limit);
 
         array->data = realloc(array->data, sizeof(Data)*array->limit);
-        if (array->data == NULL) {
-            //printf("Failed to delete data -> not enough memory available.\n");
-            return;
-        }
+        if (array->data == NULL) return;
     }
 
     bool found;
@@ -84,12 +77,10 @@ Data data_init(DataType data_enum, void *val) {
             data.data.string = val;
             break;
         case UINT64_T:
-            __uint64_t *tmp_UINT = val;
-            data.data.uint64_val = *tmp_UINT;
+            data.data.uint64_val = *(uint64_t*){val};
             break;
         case FLOAT:
-            float *tmp_FLOAT = val;
-            data.data.float_val = *tmp_FLOAT;
+            data.data.float_val = *(float*){val};
             break;
         case ARRAY:
             data.data.array_val = val;
@@ -143,21 +134,24 @@ char *data_typeof(Data data) {
     return t;
 }
 
-void *data_get(Data data) {
+void data_get(Data data, void *out) {
     switch (data.data_enum) {
         case BOOL:
-            return &(bool){data.data.boolean};
+            *(bool*)out = data.data.boolean;
+            break;
         case STRING:
-            return &(char*){data.data.string};
+            *(char**)out = data.data.string;
+            break;
         case UINT64_T:
-            return &(__uint64_t){data.data.uint64_val};
+            *(__uint64_t*)out = data.data.uint64_val;
+            break;
         case FLOAT:
-            return &(float){data.data.float_val};
-        case ARRAY:
-            return &(DataArray*){data.data.array_val};
+            *(float*)out = data.data.float_val;
+            break;
+        // can't do array
         
         default:
-            return NULL;
+            break;
     }
 }
 

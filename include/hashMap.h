@@ -5,12 +5,19 @@
 typedef struct {
     char *key;
     DataArray array;
-    __uint64_t hash;
 } _HashMapObject;
+
+// ONLY USED INTERNALLY, DO NOT USE
+typedef struct {
+    _HashMapObject *objects;
+    __uint64_t hash;
+    __uint64_t size;
+    __uint64_t limit;
+} _Bucket;
 
 // Defines an empty hashmap
 typedef struct {
-    _HashMapObject *objects;
+    _Bucket *buckets;
     __uint64_t size;
     __uint64_t limit;
 } HashMap;

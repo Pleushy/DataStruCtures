@@ -1,3 +1,4 @@
+#include <stdint.h>
 #include <stdbool.h>
 
 // Defines enums for different data types
@@ -36,7 +37,7 @@ typedef struct DATA_ARRAY {
 char *data_typeof(Data data);
 
 // Returns value of data type
-void *data_get(Data data);
+void data_get(Data data, void *out);
 
 // Prints string and value of data type
 // Can use "%%" to specify where to place data type
