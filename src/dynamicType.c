@@ -109,8 +109,8 @@ char *data_typeof(Data data) {
             t = "FLOAT";
             break;
         case ARRAY:
-            t = malloc(9);
-            strcpy(t, "ARRAY (");
+            t = malloc(2);
+            strcpy(t, "[");
             __uint64_t total = 0;
             for (__uint64_t j = 0; j < data.data.array_val->size; j++) {
                 char *new = data_typeof(arr_get(*data.data.array_val,j));
@@ -118,13 +118,13 @@ char *data_typeof(Data data) {
                 while (new[s] != '\0') s++;
                 if (j < data.data.array_val->size-1) s+=2;
                 total += s;
-                t = realloc(t, total+9);
+                t = realloc(t, total+2);
                 if (t == NULL) return "";
                 strcat(t, new);
                 if (j < data.data.array_val->size-1) strcat(t, ", ");
             }
-            t[total+7] = ')';
-            t[total+8] = '\0';
+            t[total+1] = ']';
+            t[total+2] = '\0';
             break;
         
         default:
@@ -197,11 +197,11 @@ void data_printf(const char* str, Data data) {
             printf("%f", data.data.float_val);
             break;
         case ARRAY:
-            printf("(");
+            printf("[");
             for (__uint64_t j = 0; j < data.data.array_val->size; j++) {
                 data_printf(j < data.data.array_val->size-1 ? "%%, " : "", arr_get(*data.data.array_val,j));
             }
-            printf(")");
+            printf("]");
             break;
         
         default:

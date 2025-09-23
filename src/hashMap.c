@@ -38,20 +38,9 @@ void _bucket_add(_Bucket *bucket, _HashMapObject obj) {
     bucket->size++;
 }
 
-// _HashMapObject *_bucket_get(_Bucket *bucket, char* key) {
-//     for (__uint64_t i = 0; i < bucket->size; i++) {
-//         if (!strcmp(bucket->objects[i].key, key)) {
-//             return &bucket->objects[i];
-//         }
-//     }
-    
-//     return (_HashMapObject*){};
-// }
-
 void _bucket_del(_Bucket *bucket, char *key) {
-    printf("Removing\n");
     if (!bucket->limit) return;
-    if (bucket->limit == 1) {
+    if (bucket->limit-1 == 1) {
         bucket->size = 0;
         bucket->limit = 0;
         free(bucket->objects);
@@ -120,20 +109,15 @@ void hm_put(HashMap *map, char *key, DataArray array) {
         memset(map->buckets,0,byte_size);
 
         for (__uint64_t i = 0; i < map->limit/2; i++) {
-            bool changed = false;
-            for (__uint64_t j = 0; j < tmp[i].size; j++) {
-                __uint64_t newIndex = create_hash(tmp[i].objects[j].key)%map->limit;
-                if (newIndex != i) {
-                    char *k = tmp[i].objects[j].key;
-                    DataArray a = tmp[i].objects[j].array;
-                    _bucket_del(&tmp[i], k);
-                    map->buckets[tmp[newIndex].hash%map->limit] = tmp[i];
-                    _bucket_add(&map->buckets[newIndex], (_HashMapObject){k,a});
-                    changed = true;
+            // have to reorganize every object in every bucket, inefficient and pain but theres no other way (probably)
+            if (tmp[i].hash) { // this has to be here otherwise it can cause seg fault
+                for (__uint64_t j = 0; j < tmp[i].size; j++) {
+                    __uint64_t newHash = create_hash(tmp[i].objects[j].key);
+                    __uint64_t newIndex = newHash%map->limit;
+                    map->buckets[newIndex].hash = newHash;
+                    _bucket_add(&map->buckets[newIndex], tmp[i].objects[j]);
                 }
             }
-            if (changed) continue;
-            map->buckets[tmp[i].hash%map->limit] = tmp[i];
         }
     } else {
         memcpy(map->buckets, tmp, byte_size);
@@ -148,51 +132,74 @@ void hm_put(HashMap *map, char *key, DataArray array) {
     map->size++;
 }
 
-// void hm_del(HashMap *map, char *key) {
-//     if (!map->limit) return;
-//     if (map->limit == 1) {
-//         map->limit = 0;
-//         map->size = 0;
-//         free(map->buckets);
-//         return;
-//     }
+void hm_del(HashMap *map, char *key) {
+    if (!map->limit) return;
+    if (map->limit-1 == 1) {
+        map->size = 0;
+        map->limit = 0;
+        free(map->buckets);
+        return;
+    }
 
-//     __uint64_t byte_size = sizeof(_Bucket)*map->limit;
-//     _Bucket *tmp = malloc(byte_size);
-//     if (tmp == NULL) return;
-//     memcpy(tmp, map->buckets, byte_size);
+    __uint64_t byte_size = sizeof(_Bucket)*map->limit;
+    _Bucket *tmp = malloc(byte_size);
+    if (tmp == NULL) return;
+    memcpy(tmp, map->buckets, byte_size);
 
-//     if ((map->size-1) <= (map->limit/2-1)) {
-//         map->limit /= 2;
+    if ((map->size-1) <= (map->limit/2)-1) {
+        map->limit /= 2;
         
-//         map->buckets = realloc(map->buckets, sizeof(_Bucket)*map->limit);
-//         if (map->buckets == NULL) return;
-//         memset(map->buckets,0,byte_size);
+        map->buckets = realloc(map->buckets, sizeof(_Bucket)*map->limit);
+        if (map->buckets == NULL) return;
+        memset(map->buckets,0,byte_size);
 
-//         __uint64_t hash = create_hash(key);
-//         for (__uint64_t i = 0; i < map->limit*2; i++) {
-//             if (tmp[i].hash == hash) {
-//                 tmp[i] = (_Bucket){};
-//                 continue;
-//             }
-//             // map->buckets[tmp[i].hash%map->limit] = tmp[i];
-//         }
-//     } else {
-//         memcpy(map->buckets, tmp, byte_size);
-//         __uint64_t hash = create_hash(key);
-//         __uint64_t index = hash%map->limit;
+        for (__uint64_t i = 0; i < map->limit*2; i++) {
+            // have to reorganize every object in every bucket, inefficient and pain but theres no other way (probably)
+            if (tmp[i].hash) { // this has to be here otherwise it can cause seg fault
+                for (__uint64_t j = 0; j < tmp[i].size; j++) {
+                    __uint64_t newHash = create_hash(tmp[i].objects[j].key);
+                    __uint64_t newIndex = newHash%map->limit;
+                    map->buckets[newIndex].hash = newHash;
+                    _bucket_add(&map->buckets[newIndex], tmp[i].objects[j]);
+                }
+            }
+        }
+    } else {
+        memcpy(map->buckets, tmp, byte_size);
+    }
+    free(tmp);
 
-//         map->buckets[index] = (_Bucket){};
-//     }
-//     free(tmp);
+    __uint64_t hash = create_hash(key);
+    __uint64_t index = hash%map->limit;
+    _bucket_del(&map->buckets[index], key);
+    map->size--;
+}
 
-//     map->size--;
-// }
-
-// void hm_tree(HashMap map) {
-//     for (__uint64_t i = 0; i < map.limit; i++) {
-//         if (map.buckets[i].hash) {
-//             // printf("%s\n", map.buckets[i].key);
-//         }
-//     }
-// }
+void hm_tree(HashMap map) {
+    printf("Map\n");
+    __uint64_t total = 0;
+    for (__uint64_t i = 0; i < map.limit; i++) {
+        if (map.buckets[i].hash) total++;
+    }
+    for (__uint64_t i = 0; i < map.limit; i++) {
+        if (!map.buckets[i].hash) total++;
+        for (__uint64_t j = 0; j < map.buckets[i].size; j++) {
+            if (j == 0) {
+                printf(i == total-1 ? "└" : "├");
+                printf("── B%ld\n",i);
+            }
+            printf(i < total-1 ? "│" : " ");
+            printf("   ");
+            printf(j == map.buckets[i].size-1 ? "└" : "├");
+            printf("── %s\n", map.buckets[i].objects[j].key);
+            for (__uint64_t k = 0; k < map.buckets[i].objects[j].array.size; k++) {
+                printf(i < total-1 ? "│" : " ");
+                printf("   ");
+                printf(j < map.buckets[i].size-1 ? "│" : " ");
+                printf("   ");
+                printf(k == map.buckets[i].objects[j].array.size-1 ? "└" : "├");
+                data_printf("── %%\n", arr_get(map.buckets[i].objects[j].array, k));
+            }
+        }
+    }
+}

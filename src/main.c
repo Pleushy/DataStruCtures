@@ -1,17 +1,16 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include "../include/structures.h"
 
 int main() {
     // Test code :3
 
     // Dynamic types and arrays
-    Data uint64_type = data_init(UINT64_T, (void *)(__uint64_t[]){65535});
+    Data uint64_type = data_init(UINT64_T, (__uint64_t[]){65535});
     Data string_type = data_init(STRING, "Hello, world!");
-    Data float_type = data_init(FLOAT, (void *)(float[]){3.141592f});
-    Data bool_type = data_init(BOOL, (void *)(bool[]){true});
+    Data float_type = data_init(FLOAT, (float[]){3.141592f});
+    Data bool_type = data_init(BOOL, (bool[]){true});
 
     // We can get a value back by using data_get
     bool bool_val;
@@ -56,7 +55,7 @@ int main() {
         printf("%s\n", data_typeof(current_type));
     }
 
-    // Deletes data type at first index of array
+    // We can delete the value at the first index
     arr_del(&array, 0);
 
     printf("\nExample of array with first value removed:\n");
@@ -68,10 +67,13 @@ int main() {
 
     // Hashmap test
     printf("\nExample of hashmap:\n");
+
+    // We can create a blank hashmap
     HashMap map = {};
     for (__uint64_t i = 0; i < 15; i++) {
+        // Hashmaps take arrays as input
         DataArray arr = {};
-        arr_put(&arr, data_init(UINT64_T, &(__uint64_t){i}));
+        arr_put(&arr, data_init(UINT64_T, (__uint64_t[]){i*65535}));
         char *key;
         if (i) {
             key = malloc(i/10+1);
@@ -92,15 +94,17 @@ int main() {
             key[0] = '0';
             key[1] = '\0';
         }
+
+        // We can put a key, value pair into the hashmap
         hm_put(&map, key, arr);
     }
-    // hm_tree(map);
-    for (__uint64_t i = 0; i < map.limit; i++) {
-        for (__uint64_t j = 0; j < map.buckets[i].size; j++) {
-            printf("BUCKET: %ld | KEY: %s | VALUE: ", i, map.buckets[i].objects[j].key);
-            data_printf("%%\n", arr_get(hm_get(map, map.buckets[i].objects[j].key), 0));
-        }
-    }
+    hm_put(&map, "my lovely key", array);
 
+    // We can visualize the hashmap
+    hm_tree(map);
+
+    // We can also get a value from a key
+    DataArray returnArray = hm_get(map, "5");
+    data_printf("%%\n", data_init(ARRAY, &returnArray));
     return 0;
 }
