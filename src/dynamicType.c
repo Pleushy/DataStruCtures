@@ -5,7 +5,12 @@
 #include <string.h>
 #include "../include/dynamicType.h"
 
-Data arr_get(DataArray array, __uint64_t index) {
+static void memfail() {
+    fprintf(stderr, "Failed to allocate memory\n");
+    return;
+}
+
+Data arr_get(DataArray array, uint64_t index) {
     if (index > (array.size-1) || !array.size) {
         Data returnVal = {-1, -1};
         return returnVal;
@@ -13,11 +18,15 @@ Data arr_get(DataArray array, __uint64_t index) {
     return array.data[index];
 }
 
-void arr_put(DataArray *array, Data data) {
+void arr_add(DataArray *array, Data data) {
     if (!array->limit) array->limit++;
 
-    __uint64_t byte_size = sizeof(Data)*array->size;
+    uint64_t byte_size = sizeof(Data)*array->size;
     Data *tmp = malloc(byte_size);
+    if (tmp == NULL) {
+        memfail();
+        return;
+    }
     memcpy(tmp, array->data, byte_size);
 
     if ((array->size+1) >= array->limit) {
@@ -25,25 +34,37 @@ void arr_put(DataArray *array, Data data) {
         //printf("%ld\n", array->limit);
         
         array->data = realloc(array->data, sizeof(Data)*array->limit);
-        if (array->data == NULL) return;
+        if (array->data == NULL) {
+            memfail();
+            return;
+        }
     }
 
     memcpy(array->data, tmp, byte_size);
     free(tmp);
+    tmp = NULL;
     array->data[array->size] = data;
     array->size++;
 }
 
-void arr_del(DataArray *array, __uint64_t index) {
+void arr_del(DataArray *array, uint64_t index) {
+    if (!array->size) return;
     if (index > (array->size-1)) return;
     if (!(array->size-1)) {
         array->limit = 0;
+        array->size = 0;
         array->data = 0;
         free(array->data);
+        array->data = NULL;
+        return;
     }
 
-    __uint64_t byte_size = sizeof(Data)*array->size;
+    uint64_t byte_size = sizeof(Data)*array->size;
     Data *tmp = malloc(byte_size);
+    if (tmp == NULL) {
+        memfail();
+        return;
+    }
     memcpy(tmp, array->data, byte_size);
 
     if ((array->size-1) <= (array->limit/2-1)) {
@@ -51,19 +72,99 @@ void arr_del(DataArray *array, __uint64_t index) {
         //printf("%ld\n", array->limit);
 
         array->data = realloc(array->data, sizeof(Data)*array->limit);
-        if (array->data == NULL) return;
+        if (array->data == NULL) {
+            memfail();
+            return;
+        }
     }
 
-    bool found;
-    for (__uint64_t i = 0; i < array->size; i++) {
+    bool found = false;
+    for (uint64_t i = 0; i < array->size; i++) {
         if (i == index && !found) {
             found = true;
             continue;
         }
         array->data[i-found] = tmp[i];
     }
+
     free(tmp);
+    tmp = NULL;
     array->size--;
+}
+
+void arr_insert(DataArray *array, Data data, uint64_t index) {
+    if (index>array->limit) return;
+    if (!array->limit) array->limit++;
+
+    uint64_t byte_size = sizeof(Data)*array->size;
+    Data *tmp = malloc(byte_size);
+    if (tmp == NULL) {
+        memfail();
+        return;
+    }
+    memcpy(tmp, array->data, byte_size);
+
+    if ((array->size+1) >= array->limit) {
+        array->limit *= 2;
+        
+        array->data = realloc(array->data, sizeof(Data)*array->limit);
+        if (array->data == NULL) {
+            memfail();
+            return;
+        }
+    }
+
+    bool found = false;
+    for (uint64_t i = 0; i < array->size; i++) {
+        if (i == index && !found) {
+            found = true;
+            array->data[i] = data;
+        }
+        array->data[i+found] = tmp[i];
+    }
+
+    free(tmp);
+    tmp = NULL;
+
+    array->size++;
+}
+
+uint64_t arr_is_empty(DataArray array) {
+    return !array.size;
+}
+
+uint64_t arr_size(DataArray array) {
+    return array.size;
+}
+
+Data *arr_get_values(DataArray array) {
+    if (!array.size) return NULL;
+
+    Data *data = malloc(array.size*sizeof(Data));
+    if (data == NULL) {
+        memfail();
+        return NULL;
+    }
+    for (uint64_t i = 0; i < array.size; i++) {
+        data[i] = array.data[i];
+    }
+    return data;
+}
+
+void arr_add_all(DataArray *array, Data *data) {
+    uint64_t i = 0;
+    while (data[i].data_enum) {
+        arr_add(array, data[i]);
+        i++;
+    }
+}
+
+void arr_clear(DataArray *array) {
+    if (!array->size) return;
+    array->size = 0;
+    array->limit = 0;
+    free(array->data);
+    array->data = NULL;
 }
 
 Data data_init(DataType data_enum, void *val) {
@@ -110,16 +211,23 @@ char *data_typeof(Data data) {
             break;
         case ARRAY:
             t = malloc(2);
+            if (t == NULL) {
+                memfail();
+                return NULL;
+            }
             strcpy(t, "[");
-            __uint64_t total = 0;
-            for (__uint64_t j = 0; j < data.data.array_val->size; j++) {
+            uint64_t total = 0;
+            for (uint64_t j = 0; j < data.data.array_val->size; j++) {
                 char *new = data_typeof(arr_get(*data.data.array_val,j));
-                __uint64_t s = 0;
+                uint64_t s = 0;
                 while (new[s] != '\0') s++;
                 if (j < data.data.array_val->size-1) s+=2;
                 total += s;
                 t = realloc(t, total+2);
-                if (t == NULL) return "";
+                if (t == NULL) {
+                    memfail();
+                    return NULL;
+                }
                 strcat(t, new);
                 if (j < data.data.array_val->size-1) strcat(t, ", ");
             }
@@ -143,12 +251,14 @@ void data_get(Data data, void *out) {
             *(char**)out = data.data.string;
             break;
         case UINT64_T:
-            *(__uint64_t*)out = data.data.uint64_val;
+            *(uint64_t*)out = data.data.uint64_val;
             break;
         case FLOAT:
             *(float*)out = data.data.float_val;
             break;
-        // can't do array
+        case ARRAY: //TODO
+            *(DataArray**)out = data.data.array_val;
+            break;
         
         default:
             break;
@@ -156,12 +266,12 @@ void data_get(Data data, void *out) {
 }
 
 void data_printf(const char* str, Data data) {
-
     char *startStr = malloc(1), *endStr = malloc(1);
-    if (startStr == NULL || endStr == NULL) return;
-    startStr[0] = '\0';
-    endStr[0] = '\0';
-    __uint64_t i = 0, splitIndex = 0;
+    if (startStr == NULL || endStr == NULL) {
+        memfail();
+        return;
+    }
+    uint64_t i = 0, splitIndex = 0;
     while (str[i] != '\0') {
         if (str[i] == '%') {
             splitIndex = ++i;
@@ -170,17 +280,28 @@ void data_printf(const char* str, Data data) {
 
         if (splitIndex > 0) {
             endStr = realloc(endStr, i-splitIndex+1);
-            if (endStr == NULL) return;
+            if (endStr == NULL) {
+                memfail();
+                return;
+            }
             endStr[i-splitIndex] = str[i];
             endStr[i-splitIndex+1] = '\0';
         } else {
             startStr = realloc(startStr, i+1);
-            if (startStr == NULL) return;
+            if (startStr == NULL) {
+                memfail();
+                return;
+            }
             startStr[i] = str[i];
-            startStr[i+1] = '\0';
         }
         i++;
     }
+    if (splitIndex) {
+        startStr[i-(i-splitIndex)-2] = '\0';
+    } else {
+        startStr[i] = '\0';
+    }
+    endStr[i] = '\0';
 
     printf("%s", startStr);
     switch (data.data_enum) {
@@ -198,7 +319,7 @@ void data_printf(const char* str, Data data) {
             break;
         case ARRAY:
             printf("[");
-            for (__uint64_t j = 0; j < data.data.array_val->size; j++) {
+            for (uint64_t j = 0; j < data.data.array_val->size; j++) {
                 data_printf(j < data.data.array_val->size-1 ? "%%, " : "", arr_get(*data.data.array_val,j));
             }
             printf("]");
@@ -210,5 +331,7 @@ void data_printf(const char* str, Data data) {
     }
     printf("%s", endStr);
     free(startStr);
+    startStr = NULL;
     free(endStr);
+    endStr = NULL;
 }
